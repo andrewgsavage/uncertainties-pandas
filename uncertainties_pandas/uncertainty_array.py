@@ -259,8 +259,8 @@ class UncertaintyArray(
         """
 
         functions = {
-            "any": np.any,
-            "all": np.all,
+            "any": any,
+            "all": all,
             "min": np.min,
             "max": np.max,
             "sum": np.sum,

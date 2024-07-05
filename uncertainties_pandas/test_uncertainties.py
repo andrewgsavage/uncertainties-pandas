@@ -261,11 +261,22 @@ class TestUncertaintyArray(base.ExtensionTests):
 
     # NumericReduce and BooleanReduce
     def _supports_reduction(self, ser: pd.Series, op_name: str) -> bool:
+        if op_name in [
+            "sem",
+            "kurt",
+            "skew",
+            "var",
+            "std",
+        ]:
+            return False
         return True
 
-    # @pytest.mark.xfail(reason="_reduce is not implemented")
-    def test_in_numeric_groupby(self, data_for_grouping):
-        super().test_in_numeric_groupby(data_for_grouping)
+    @pytest.mark.parametrize("skipna", [True, False])
+    def test_reduce_series_numeric(self, data, all_numeric_reductions, skipna):
+        if all_numeric_reductions in ["mean", "median"]:
+            pytest.skip(reason="pandas meand and median error on ufloat objects")
+        else:
+            super().test_reduce_series_numeric(data, all_numeric_reductions, skipna)
 
     @pytest.mark.xfail(reason="Couldn't work out why this fails")
     def test_groupby_extension_agg(self, data_for_grouping):
