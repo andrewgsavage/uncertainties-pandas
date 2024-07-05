@@ -1,5 +1,5 @@
 [project]
-Uame = "Uncertainties-Pandas"
+name = "Uncertainties-Pandas"
 authors = [
   {name="Andrew Savage", email="andrewgsavage@gmail.com"}
 ]
