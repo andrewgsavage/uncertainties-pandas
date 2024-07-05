@@ -1,0 +1,89 @@
+[project]
+Uame = "Uncertainties-Pandas"
+authors = [
+  {name="Andrew Savage", email="andrewgsavage@gmail.com"}
+]
+license = {text = "BSD"}
+description = "Extend Pandas with uncertainties"
+readme = "README.rst"
+keywords = [
+    "error propagation", "uncertainties", "uncertainty calculations",
+    "standard deviation", "derivatives", "partial derivatives",
+    "differentiation", "pandas"
+  ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+requires-python = ">=3.9"
+dynamic = ["version"] # Version is taken from git tags using setuptools_scm
+dependencies = [
+  "uncertainties>=3.2.2",
+  "pandas>=2.2.2"
+]
+
+[tool.setuptools.package-data]
+uncertainties_pandas = [
+      "py.typed"
+      ]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-mpl",
+    "pytest-cov",
+    "pytest-subtests",
+    "codecov",
+    "coveralls",
+    "nbval",
+    "pyarrow"
+]
+
+[project.urls]
+Homepage = "https://github.com/andrewgsavage/uncertainties-pandas"
+
+[tool.setuptools]
+packages = ["uncertainties_pandas"]
+
+[build-system]
+requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=3.4.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[tool.ruff.isort]
+required-imports = ["from __future__ import annotations"]
+known-first-party= ["uncertainties"]
+
+
+[tool.ruff]
+ignore = [
+  # whitespace before ':' - doesn't work well with black
+  # "E203",
+  "E402",
+  # line too long - let black worry about that
+  "E501",
+  # do not assign a lambda expression, use a def
+  "E731",
+  # line break before binary operator
+  # "W503"
+]
+extend-exclude = ["build"]
+line-length=88
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore:The 'asynci*:RuntimeWarning",
+  # Warnings that occur when running pytest
+  ]
