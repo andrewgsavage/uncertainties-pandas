@@ -1,13 +1,10 @@
 """
 This file contains the tests required by pandas for an ExtensionArray and ExtensionType.
 """
-import warnings
 
 import numpy as np
 import pandas as pd
-import pandas._testing as tm
 import pytest
-from pandas.core import ops
 from pandas.tests.extension import base
 from pandas.tests.extension.conftest import (
     as_frame,  # noqa: F401
@@ -19,9 +16,9 @@ from pandas.tests.extension.conftest import (
 )
 
 from .uncertainty_array import UncertaintyArray, UncertaintyDtype, ufloat
-from uncertainties import umath
 
 # from .core import ufloat
+
 
 @pytest.fixture(params=[True, False])
 def box_in_series(request):
@@ -37,15 +34,13 @@ def dtype():
 @pytest.fixture
 def data(request):
     return UncertaintyArray(
-        [ufloat(i, abs(i)/100) for i in np.arange(start=1.0, stop=101.0)]
+        [ufloat(i, abs(i) / 100) for i in np.arange(start=1.0, stop=101.0)]
     )
 
 
 @pytest.fixture
 def data_missing():
-    return UncertaintyArray(
-        [ufloat(i, abs(i)/100) for i in [np.nan, 1]]
-    )
+    return UncertaintyArray([ufloat(i, abs(i) / 100) for i in [np.nan, 1]])
 
 
 @pytest.fixture
@@ -53,9 +48,7 @@ def data_for_twos():
     x = [
         2.0,
     ] * 100
-    return UncertaintyArray(
-         [ufloat(i, abs(i)/100) for i in x]
-    )
+    return UncertaintyArray([ufloat(i, abs(i) / 100) for i in x])
 
 
 @pytest.fixture(params=["data", "data_missing"])
@@ -88,16 +81,12 @@ def sort_by_key(request):
 
 @pytest.fixture
 def data_for_sorting():
-    return UncertaintyArray(
-         [ufloat(i, abs(i)/100) for i in [0.3, 10.0, -50.0]]
-    )
+    return UncertaintyArray([ufloat(i, abs(i) / 100) for i in [0.3, 10.0, -50.0]])
 
 
 @pytest.fixture
 def data_missing_for_sorting():
-    return UncertaintyArray(
-         [ufloat(i, abs(i)/100) for i in [4.0, np.nan, -5.0]]
-    )
+    return UncertaintyArray([ufloat(i, abs(i) / 100) for i in [4.0, np.nan, -5.0]])
 
 
 @pytest.fixture
@@ -118,6 +107,7 @@ def data_for_grouping():
     c = ufloat(3.0, 0.1)
     x = [a, a, np.nan, np.nan, b, b, a, c]
     return UncertaintyArray(x)
+
 
 # === missing from pandas extension docs about what has to be included in tests ===
 # copied from pandas/pandas/conftest.py
@@ -207,9 +197,11 @@ def all_numeric_accumulations(request):
     """
     return request.param
 
-class InvalidScalar():
+
+class InvalidScalar:
     def strip(self):
         return "invalid_scalar"
+
 
 @pytest.fixture
 def invalid_scalar(data):
@@ -222,6 +214,7 @@ def invalid_scalar(data):
 
 
 import operator
+
 
 @pytest.fixture(
     params=[
@@ -239,34 +232,41 @@ def comparison_op(request):
     """
     return request.param
 
-from pandas.tests.extension import base
 
 class TestUncertaintyArray(base.ExtensionTests):
-    divmod_exc = TypeError # TODO: fix this
+    divmod_exc = TypeError  # TODO: fix this
     series_scalar_exc = None
     frame_scalar_exc = None
     series_array_exc = None
 
     # This test round trips to file. Set the uncertainty to zero so the recreated data compares equal to the original data.
-    @pytest.mark.parametrize("data", [UncertaintyArray(
-        [ufloat(i, 0) for i in np.arange(start=1.0, stop=101.0)]
-    )])
+    @pytest.mark.parametrize(
+        "data",
+        [UncertaintyArray([ufloat(i, 0) for i in np.arange(start=1.0, stop=101.0)])],
+    )
     @pytest.mark.parametrize("engine", ["c", "python"])
     def test_EA_types(self, engine, data, request):
-        super().test_EA_types(engine, data)
+        super().test_EA_types(engine, data, request)
 
-    @pytest.mark.xfail(run=True, reason="test returns Float64Dtype rather than float64 but is otherwise correct")
+    @pytest.mark.xfail(
+        run=True,
+        reason="test returns Float64Dtype rather than float64 but is otherwise correct",
+    )
     def test_value_counts_with_normalize(self, data, index, obj):
         super().test_value_counts_with_normalize(data, index, obj)
-    
+
     @pytest.mark.xfail(reason="Can't invert uncertainties")
     def test_invert(self, data):
         super().test_invert(data)
-    
-    @pytest.mark.xfail(reason="_reduce is not implemented")
+
+    # NumericReduce and BooleanReduce
+    def _supports_reduction(self, ser: pd.Series, op_name: str) -> bool:
+        return True
+
+    # @pytest.mark.xfail(reason="_reduce is not implemented")
     def test_in_numeric_groupby(self, data_for_grouping):
         super().test_in_numeric_groupby(data_for_grouping)
-    
+
     @pytest.mark.xfail(reason="Couldn't work out why this fails")
     def test_groupby_extension_agg(self, data_for_grouping):
         super().test_groupby_extension_agg(data_for_grouping)

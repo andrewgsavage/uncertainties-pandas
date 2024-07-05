@@ -5,26 +5,19 @@ import pandas as pd
 import pandas.api.extensions
 from pandas.api.types import is_dtype_equal, is_list_like, is_scalar, pandas_dtype
 
-from .core import UFloat, ufloat, ufloat_fromstr
+from uncertainties import UFloat, ufloat, ufloat_fromstr, umath
 
-import re
 import numpy as np
-from uncertainties import umath
-from pandas.core.arrays.base import ExtensionArray
-
 from pandas.core import (
-    algorithms as algos,
-    arraylike,
-    missing,
-    nanops,
     ops,
 )
 
 from pandas.core.construction import (
-    array as pd_array,
-    ensure_wrapped_if_datetimelike,
     extract_array,
 )
+from pandas.core.arrays._mixins import NDArrayBackedExtensionArray
+
+
 @pandas.api.extensions.register_extension_dtype
 class UncertaintyDtype(pandas.api.extensions.ExtensionDtype):
     """
@@ -36,7 +29,7 @@ class UncertaintyDtype(pandas.api.extensions.ExtensionDtype):
     names = None
     name = "UncertaintyDtype"
     type = UFloat
-    
+
     @property
     def _is_numeric(self) -> bool:
         return True
@@ -69,16 +62,29 @@ class UncertaintyDtype(pandas.api.extensions.ExtensionDtype):
         """
 
         return self.name
+
+
 def _isna(obj):
     if isinstance(obj, UFloat):
         return umath.isnan(obj.nominal_value)
     return pd.isna(obj)
+
 
 def _convert_unan_to_pdna(arr):
     """
     Convert ufloat nan to pd.NA
     """
     return np.array([pd.NA if _isna(x) else x for x in arr], dtype=object)
+
+
+def _convert_pdna_to_nan(arr):
+    """
+    Convert ufloat nan to pd.NA
+    """
+    return np.array(
+        [ufloat(np.nan, np.nan) if pd.isna(x) else x for x in arr], dtype=object
+    )
+
 
 def _ufloat(value):
     if _isna(value):
@@ -93,7 +99,8 @@ def _ufloat(value):
 
 
 class UncertaintyArray(
-    pandas.core.arraylike.OpsMixin, pandas.core.arrays._mixins.NDArrayBackedExtensionArray
+    pandas.core.arraylike.OpsMixin,
+    NDArrayBackedExtensionArray,
 ):
     dtype = UncertaintyDtype()
     name = "UncertaintyArray"
@@ -105,7 +112,8 @@ class UncertaintyArray(
 
     def __init__(self, values, dtype=None, copy: bool = False):
         if not (
-            isinstance(values, numpy.ndarray) and values.dtype == numpy.dtype("object")
+            isinstance(values, numpy.ndarray)
+            and values.dtype == numpy.dtype("object")
             and all(isinstance(v, UFloat) for v in values)
         ):
             values = self.__ndarray(values)
@@ -118,7 +126,10 @@ class UncertaintyArray(
     @classmethod
     def __ndarray(cls, scalars):
         return numpy.array(
-            [_ufloat(scalar) if not isinstance(scalar, UFloat) else scalar for scalar in scalars],
+            [
+                _ufloat(scalar) if not isinstance(scalar, UFloat) else scalar
+                for scalar in scalars
+            ],
             "object",
         )
 
@@ -139,7 +150,6 @@ class UncertaintyArray(
                 return self.copy()
 
         return super().astype(dtype, copy=copy)
-
 
     def _from_factorized(self, unique, original):
         return self.__class__(unique)
@@ -164,9 +174,8 @@ class UncertaintyArray(
 
     def __setitem__(self, index, value):
         if is_list_like(value) and is_scalar(index):
-                raise ValueError("Length of index must match length of values")
+            raise ValueError("Length of index must match length of values")
         super().__setitem__(index, value)
-
 
     def _validate_setitem_value(self, value):
         """
@@ -176,22 +185,20 @@ class UncertaintyArray(
             return [_ufloat(v) for v in value]
 
         return _ufloat(value)
-    
-        
+
     def _arith_method(self, other, op):
-        res_name = ops.get_op_result_name(self, other)
+        ops.get_op_result_name(self, other)
 
         lvalues = self._ndarray
         rvalues = extract_array(other, extract_numpy=True, extract_range=True)
         rvalues = ops.maybe_prepare_scalar_for_op(rvalues, lvalues.shape)
-        rvalues = ensure_wrapped_if_datetimelike(rvalues)
         if isinstance(rvalues, range):
             rvalues = np.arange(rvalues.start, rvalues.stop, rvalues.step)
 
         # pandas thinks a scalar uncertainty is already an array as it has a dtype
         if op.__name__ == "floordiv" and is_scalar(rvalues):
             rvalues = np.array(rvalues)
-        
+
         with np.errstate(all="ignore"):
             result = ops.arithmetic_op(lvalues, rvalues, op)
 
@@ -199,16 +206,13 @@ class UncertaintyArray(
 
     def _cmp_method(self, other, op):
         """Compare array values, for use in OpsMixin."""
-        print(1, other)
         if is_scalar(other):
             if not isinstance(other, UFloat):
                 other = _ufloat((other, 0))
             other = type(self)([other])
-        print(2, other)
 
         if type(other) is not type(self):
             return NotImplemented
-        print(3, other)
 
         oshape = getattr(other, "shape", None)
         if oshape != self.shape and oshape != (1,) and self.shape != (1,):
@@ -228,3 +232,60 @@ class UncertaintyArray(
 
     def __abs__(self) -> UncertaintyArray:
         return type(self)(abs(self._ndarray))
+
+    def _reduce(self, name, *, skipna: bool = True, keepdims: bool = False, **kwds):
+        """
+        Return a scalar result of performing the reduction operation.
+
+        Parameters
+        ----------
+        name : str
+            Name of the function, supported values are:
+            { any, all, min, max, sum, mean, median, prod,
+            std, var, sem, kurt, skew }.
+        skipna : bool, default True
+            If True, skip NaN values.
+        **kwargs
+            Additional keyword arguments passed to the reduction function.
+            Currently, `ddof` is the only supported kwarg.
+
+        Returns
+        -------
+        scalar
+
+        Raises
+        ------
+        TypeError : subclass does not define reductions
+        """
+
+        functions = {
+            "any": np.any,
+            "all": np.all,
+            "min": np.min,
+            "max": np.max,
+            "sum": np.sum,
+            "mean": np.mean,
+            "median": np.median,
+            "prod": np.prod,
+            # "std": np.std,
+            # "var": np.var,
+            # "sem": np.sem,
+            # "kurt": np.kurt,
+            # "skew": np.skew,
+        }
+        if name not in functions:
+            raise TypeError(f"cannot perform {name} with type {self.dtype}")
+
+        if "min_count" in kwds and sum(~self.isna()) < kwds["min_count"]:
+            result = pd.NA
+        else:
+            kwds.pop("min_count", None)
+            if skipna:
+                data = self[~self.isna()]._ndarray
+            else:
+                data = _convert_pdna_to_nan(self._ndarray)
+            result = functions[name](data, **kwds)
+
+        if keepdims:
+            return UncertaintyArray([result])
+        return result

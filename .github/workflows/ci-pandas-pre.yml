@@ -14,15 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TEST_OPTS: "-rfsxEX -s --cov=pint_pandas --cov-config=.coveragerc"
+      TEST_OPTS: "-rfsxEX -s --cov-config=.coveragerc"
 
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 100
 
-      - name: Get tags
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      # - name: Get tags
+      #   run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
