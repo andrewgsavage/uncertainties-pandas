@@ -105,7 +105,7 @@ def data_for_grouping():
     a = ufloat(1.0, 0.1)
     b = ufloat(2.0, 0.1)
     c = ufloat(3.0, 0.1)
-    x = [a, a, np.nan, np.nan, b, b, a, c]
+    x = [b, b, np.nan, np.nan, a, a, b, c]
     return UncertaintyArray(x)
 
 
@@ -277,10 +277,6 @@ class TestUncertaintyArray(base.ExtensionTests):
             pytest.skip(reason="pandas meand and median error on ufloat objects")
         else:
             super().test_reduce_series_numeric(data, all_numeric_reductions, skipna)
-
-    @pytest.mark.xfail(reason="Couldn't work out why this fails")
-    def test_groupby_extension_agg(self, data_for_grouping):
-        super().test_groupby_extension_agg(data_for_grouping)
 
     @pytest.mark.xfail(reason="Couldn't work out why this fails")
     def test_from_dtype(self, data):
