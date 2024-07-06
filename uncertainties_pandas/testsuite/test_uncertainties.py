@@ -17,6 +17,7 @@ from pandas.tests.extension.conftest import (
 
 from uncertainties_pandas import UncertaintyArray, UncertaintyDtype
 from uncertainties import ufloat
+
 # from .core import ufloat
 
 
