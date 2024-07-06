@@ -5,7 +5,7 @@ import pandas as pd
 import pandas.api.extensions
 from pandas.api.types import is_dtype_equal, is_list_like, is_scalar, pandas_dtype
 
-from uncertainties import UFloat, ufloat, ufloat_fromstr, umath
+from uncertainties import UFloat, ufloat, ufloat_fromstr, umath, unumpy
 
 import numpy as np
 from pandas.core import (
@@ -16,6 +16,7 @@ from pandas.core.construction import (
     extract_array,
 )
 from pandas.core.arrays._mixins import NDArrayBackedExtensionArray
+from pandas._libs import lib
 
 
 @pandas.api.extensions.register_extension_dtype
@@ -25,10 +26,11 @@ class UncertaintyDtype(pandas.api.extensions.ExtensionDtype):
     """
 
     na_value = pd.NA
-    kind = "O"
+    kind = "f"
     names = None
     name = "UncertaintyDtype"
     type = UFloat
+    itemsize = 64
 
     @property
     def _is_numeric(self) -> bool:
@@ -79,7 +81,7 @@ def _convert_unan_to_pdna(arr):
 
 def _convert_pdna_to_nan(arr):
     """
-    Convert ufloat nan to pd.NA
+    Convert pd.NA to ufloat nan
     """
     return np.array(
         [ufloat(np.nan, np.nan) if pd.isna(x) else x for x in arr], dtype=object
@@ -288,4 +290,46 @@ class UncertaintyArray(
 
         if keepdims:
             return UncertaintyArray([result])
+        return result
+
+    # Overide to_numpy so UA.to_numpy(dtype=float) doesn't raise error.
+    # required for plotting
+    def to_numpy(
+        self,
+        dtype=None,
+        copy: bool = False,
+        na_value: object = lib.no_default,
+    ) -> np.ndarray:
+        """
+        Convert to a NumPy ndarray.
+
+        This is similar to :meth:`numpy.asarray`, but may provide additional control
+        over how the conversion is done.
+
+        Parameters
+        ----------
+        dtype : str or numpy.dtype, optional
+            The dtype to pass to :meth:`numpy.asarray`.
+        copy : bool, default False
+            Whether to ensure that the returned value is a not a view on
+            another array. Note that ``copy=False`` does not *ensure* that
+            ``to_numpy()`` is no-copy. Rather, ``copy=True`` ensure that
+            a copy is made, even if not strictly necessary.
+        na_value : Any, optional
+            The value to use for missing values. The default value depends
+            on `dtype` and the type of the array.
+
+        Returns
+        -------
+        numpy.ndarray
+        """
+        if dtype == "float":
+            data = _convert_pdna_to_nan(self._ndarray)
+            result = unumpy.nominal_values(data)
+        else:
+            result = np.asarray(self, dtype=dtype)
+        if copy or na_value is not lib.no_default:
+            result = result.copy()
+        if na_value is not lib.no_default:
+            result[self.isna()] = na_value
         return result
