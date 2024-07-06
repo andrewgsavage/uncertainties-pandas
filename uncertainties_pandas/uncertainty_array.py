@@ -296,7 +296,7 @@ class UncertaintyArray(
     # required for plotting
     def to_numpy(
         self,
-        dtype: None,
+        dtype=None,
         copy: bool = False,
         na_value: object = lib.no_default,
     ) -> np.ndarray:
