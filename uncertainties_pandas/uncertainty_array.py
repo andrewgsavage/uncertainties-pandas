@@ -64,7 +64,6 @@ class UncertaintyDtype(pandas.api.extensions.ExtensionDtype):
         """
 
         return self.name
-    
 
 
 def _isna(obj):
