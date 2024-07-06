@@ -1,5 +1,5 @@
 [project]
-Uame = "Uncertainties-Pandas"
+name = "Uncertainties-Pandas"
 authors = [
   {name="Andrew Savage", email="andrewgsavage@gmail.com"}
 ]
@@ -29,7 +29,7 @@ classifiers = [
 requires-python = ">=3.9"
 dynamic = ["version"] # Version is taken from git tags using setuptools_scm
 dependencies = [
-  "uncertainties>=3.2.2",
+  "uncertainties>=3.2.1",
   "pandas>=2.2.2"
 ]
 
