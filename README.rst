@@ -1,5 +1,5 @@
 Uncertainties-Pandas
-===========
+====================
 
 Pandas support for `uncertainties <https://uncertainties.readthedocs.io/en/latest/>`_
 
