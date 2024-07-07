@@ -23,8 +23,8 @@ repos:
       additional_dependencies:
       - mdformat-gfm  # GitHub-flavored Markdown
       - mdformat-black
--   repo: https://github.com/kynan/nbstripout
-    rev: 0.6.1
-    hooks:
-      - id: nbstripout
-        args: [--extra-keys=metadata.kernelspec metadata.language_info.version]
+# -   repo: https://github.com/kynan/nbstripout
+#     rev: 0.6.1
+#     hooks:
+#       - id: nbstripout
+#         args: [--extra-keys=metadata.kernelspec metadata.language_info.version]
