@@ -1,9 +1,15 @@
 Uncertainties-Pandas
 ===========
 
-Pandas support for `uncertainties <https://https://uncertainties.readthedocs.io/en/latest/>`_
+Pandas support for `uncertainties <https://uncertainties.readthedocs.io/en/latest/>`_
 
-.. code-block:: python
+See the tutorial `notebook <https://github.com/andrewgsavage/uncertainties-pandas/blob/main/notebooks/tutorial.ipynb>`_
 
-    >>> import pandas as pd
-    >>> import uncertainties_pandas
+Quick Installation
+------------------
+
+To install Uncertainties-Pandas, simply:
+
+.. code-block:: bash
+
+    $ pip install uncertainties-pandas
